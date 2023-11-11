@@ -1,13 +1,14 @@
 from graphs.hamiltonian_cycle import executar_backtracking_unico_ciclo
+from utils.cli import execute_pollard_rho
 
 
-def executar_grafos():
-    comando = int(input("Seleciona o que deseja executar:"
+def execute_graphs():
+    command = int(input("Seleciona o que deseja executar:"
                         "\n0 - Voltar"
                         "\n1 - Backtracking para encontrar Ciclo Hamiltoniano em grafo não direcionado"
                         "\n"))
 
-    match comando:
+    match command:
         case 0:
             return
         case 1:
@@ -15,21 +16,41 @@ def executar_grafos():
 
     return
 
-
-if __name__ == '__main__':
-    comando = int(input("Seleciona o que deseja executar:"
-                        "\n0 - Sair"
-                        "\n1 - Algorithms em graphs"
+def execute_factorization():
+    command = int(input("Choose what you want to execute:"
+                        "\n0 - Voltar"
+                        "\n1 - Pollard's Rho Factorization"
                         "\n"))
 
-    while comando != 0:
-        match comando:
-            case 1:
-                executar_grafos()
+    match command:
+        case 0:
+            return
+        case 1:
+            execute_pollard_rho()
+        case _:
+            print("Invalid command")
 
-        comando = int(input("Seleciona o que deseja executar:"
-                            "\n0 - Sair"
-                            "\n1 - Algorithms em graphs"
+    return
+
+
+if __name__ == '__main__':
+    command = int(input("Choose what you want to execute:"
+                        "\n0 - Exit"
+                        "\n1 - Graph Algorithms"
+                        "\n2 - Factorization Algoriths"
+                        "\n"))
+
+    while command != 0:
+        match command:
+            case 1:
+                execute_graphs()
+            case 2:
+                execute_factorization()
+
+        command = int(input("Choose what you want to execute:"
+                            "\n0 - Exit"
+                            "\n1 - Graph Algorithms"
+                            "\n2 - Factorization Algoriths"
                             "\n"))
 
     print("Fim da execução")
