@@ -2,6 +2,13 @@
 
 This repository have the objective to store diferent types of algorithms your applications.
 
+## Execution
+Just type on the terminal:
+```
+python main.py
+```
+So simple 😊
+
 ## Structure
 
 ```
