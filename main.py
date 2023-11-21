@@ -1,35 +1,23 @@
-from graphs.hamiltonian_cycle import executar_backtracking_unico_ciclo
-
-
-def executar_grafos():
-    comando = int(input("Seleciona o que deseja executar:"
-                        "\n0 - Voltar"
-                        "\n1 - Backtracking para encontrar Ciclo Hamiltoniano em grafo não direcionado"
-                        "\n"))
-
-    match comando:
-        case 0:
-            return
-        case 1:
-            executar_backtracking_unico_ciclo()
-
-    return
-
+from utils.cli import execute_factorization, execute_graphs
 
 if __name__ == '__main__':
-    comando = int(input("Seleciona o que deseja executar:"
-                        "\n0 - Sair"
-                        "\n1 - Algorithms em graphs"
+    command = int(input("Choose what you want to execute:"
+                        "\n0 - Exit"
+                        "\n1 - Graph Algorithms"
+                        "\n2 - Factorization Algoriths"
                         "\n"))
 
-    while comando != 0:
-        match comando:
+    while command != 0:
+        match command:
             case 1:
-                executar_grafos()
+                execute_graphs()
+            case 2:
+                execute_factorization()
 
-        comando = int(input("Seleciona o que deseja executar:"
-                            "\n0 - Sair"
-                            "\n1 - Algorithms em graphs"
+        command = int(input("Choose what you want to execute:"
+                            "\n0 - Exit"
+                            "\n1 - Graph Algorithms"
+                            "\n2 - Factorization Algoriths"
                             "\n"))
 
     print("Fim da execução")
