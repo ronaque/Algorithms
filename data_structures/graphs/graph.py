@@ -1,5 +1,6 @@
 from data_structures.graphs.node import Node
 
+
 class Graph:
     def __init__(self, nodes=None, edges=None):
         if edges is None:
@@ -20,7 +21,20 @@ class Graph:
         node = Node(last_id)
         self.nodes.append(node)
 
-    def get_node_by_id(self, id_node) -> Node | None:
+    def remove_node(self, node: Node):
+        """
+        Remove a node from the graph
+        Parameters
+        ----------
+        node: Node to be removed
+
+        Returns
+        -------
+
+        """
+        self.nodes.remove(node)
+
+    def get_node_by_id(self, id_node: int) -> Node | None:
         """
         Get a node by its id, if the node don't exist, return None
         Parameters
@@ -36,12 +50,10 @@ class Graph:
                 return no
         return None
 
-    def remove_node(self, node):
-        self.nodes.remove(node)
-
-    def add_edge(self, id_node1, id_node2):
+    def add_edge(self, id_node1: int, id_node2: int):
         """
         Add an edge between two nodes, using their ids
+        The nodes Must exist
         Parameters
         ----------
         id_node1: Id of the first node
@@ -57,7 +69,26 @@ class Graph:
         node2.add_adjascent(node1)
         self.edges.append((node1, node2))
 
-    def check_edge_exist(self, id_node1, id_node2):
+    def remove_edge(self, id_node1, id_node2):
+        """
+        Remove an edge between two nodes, using their ids
+        The nodes Must exist
+        Parameters
+        ----------
+        id_node1: Id of the first node
+        id_node2: Id of the second node
+
+        Returns
+        -------
+
+        """
+        node1 = self.get_node_by_id(id_node1)
+        node2 = self.get_node_by_id(id_node2)
+        node1.remove_adjascent(node2)
+        node2.remove_adjascent(node1)
+        self.edges.remove((node1, node2))
+
+    def check_edge_exist(self, id_node1, id_node2) -> bool:
         """
         Check if an edge exists between two nodes, using their ids
         Parameters

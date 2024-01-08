@@ -1,5 +1,5 @@
 from factorization.pollard_rho import pollard_rho_factorization
-from graphs.hamiltonian_cycle import executar_backtracking_unico_ciclo
+from graphs.hamiltonian_cycle import get_first_cycle_backtracking
 
 
 def execute_pollard_rho():
@@ -39,6 +39,6 @@ def execute_graphs():
         case 0:
             return
         case 1:
-            executar_backtracking_unico_ciclo()
+            get_first_cycle_backtracking()
 
     return
