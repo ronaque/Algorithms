@@ -1,3 +1,4 @@
+from encryption_decryption.rc5 import test
 from factorization.pollard_rho import pollard_rho_factorization
 from graphs.hamiltonian_cycle import get_first_cycle_backtracking
 
@@ -11,6 +12,20 @@ def execute_pollard_rho():
     else:
         print(f"The algorithm could not factorize {composite_number} in sqrt({composite_number}) iterations.")
 
+
+def execute_encryption_decryption():
+    command = int(input("Choose what you want to execute:"
+                        "\n0 - Exit"
+                        "\n1 - RC5"
+                        "\n"))
+
+    match command:
+        case 0:
+            return
+        case 1:
+            test()
+
+    return
 
 def execute_factorization():
     command = int(input("Choose what you want to execute:"

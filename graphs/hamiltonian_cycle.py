@@ -1,6 +1,5 @@
 from data_structures.graphs.node import Node
 from data_structures.graphs.graph import Graph
-from data_structures.graphs.util import cin_initialize_grafo
 from utils.tkinter import create_graph_with_tkinter
 
 
