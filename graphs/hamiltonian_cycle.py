@@ -1,9 +1,10 @@
 from data_structures.graphs.node import Node
 from data_structures.graphs.graph import Graph
-from data_structures.graphs.util import cin_initialize_grafo
+from utils.decorator import timer
 from utils.tkinter import create_graph_with_tkinter
 
 
+@timer
 def backtracking_first_cycle(graph: Graph, input: Node, cycle: list):
     '''
     Algoritmo para encontrar um único ciclo hamiltoniano em um grafo não direcionado
