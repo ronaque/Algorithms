@@ -1,5 +1,7 @@
 import ctypes as ct
 
+from utils.decorator import timer
+
 w = 32 # Word Size
 r = 12 # Number of Rounds
 b = 16 # Number o bytes in key (16 = 128 bits)
@@ -10,6 +12,32 @@ S = [0]*t # Expanded key table
 # Magic constants
 p = 0x0b7e15163
 q = 0x9e3779b9
+
+def to_byte(num):
+    """
+    Converts a number to a byte.
+    Parameters
+    ----------
+    num: The number to be converted.
+
+    Returns
+    -------
+    A byte.
+    """
+    return num & 0xFF
+
+def to_four_bytes(num):
+    """
+    Converts a number to a 4 bytes array.
+    Parameters
+    ----------
+    num: The number to be converted.
+
+    Returns
+    -------
+    A 4 bytes array.
+    """
+    return num & 0xFFFFFFFF
 
 def left_rotate(x, y):
     """
@@ -43,6 +71,56 @@ def right_rotate(x, y):
     """
     return (((x) >> (y&(w-1))) | ((x) << (w - (y&(w-1)))))
 
+def rc5_encrypt(input, output):
+    """
+    This function will encrypt a 64 bits Word (input) into another 64 bits Word (output).
+    The input will be organized in two 32 bits words, A and B, that after encryption with ther key expansion Table S,
+    will be organized in the output in the same way.
+    This must be done after the key expansion setup.
+    Parameters
+    ----------
+    input
+    output
+
+    Returns
+    -------
+
+    """
+    A = to_four_bytes(input[0] + S[0])
+    B = to_four_bytes(input[1] + S[1])
+
+    i = 1
+    while i <= r:
+        A = to_four_bytes(left_rotate(A ^ B, B) + S[2*i])
+        B = to_four_bytes(left_rotate(B ^ A, A) + S[2*i+1])
+        i += 1
+
+    output[0] = A
+    output[1] = B
+
+def rc5_decrypt(input, output):
+    """
+
+    Parameters
+    ----------
+    input
+    output
+
+    Returns
+    -------
+
+    """
+    A = to_four_bytes(input[0])
+    B = to_four_bytes(input[1])
+    i = r
+    while i > 0:
+        A = to_four_bytes(right_rotate(A - S[2*i], B) ^ B)
+        B = to_four_bytes(right_rotate(B - S[2*i+1], A) ^ A)
+        i -= 1
+
+    output[0] = to_four_bytes(A - S[0])
+    output[1] = to_four_bytes(B - S[1])
+
 def rc5_setup(key):
     """
     R5 algorithm setup, that will make the key expansion to a key array S.
@@ -57,35 +135,73 @@ def rc5_setup(key):
     u = w//8
     L = [0] * c
     i = b - 1
-    # Initialize L
+    # Initialize L: convert the key from bytes to words
     while i != -1:
-        L[i // u] = ct.c_uint32((L[i // u] << 8) + key[i]).value
+        L[i // u] = to_four_bytes((L[i // u] << 8) + key[i])
         i -= 1
 
-    # Initialize S
+    # Initialize S using the p and q magic constants
     S[0] = p
     i = 1
     while i < t:
-        S[i] = ct.c_uint32(S[i-1] + q).value
+        S[i] = to_four_bytes((S[i-1] + q))
         i += 1
 
     # Mix L into S
-    A = B = i = j = key = 0
-    while key < t*3:
-        A = S[i] = ct.c_uint32(left_rotate(S[i] + (A + B), 3)).value
-        B = L[j] = ct.c_uint32(left_rotate(L[j] + (A + B), (A + B))).value
-        key += 1
+    i = 0
+    j = 0
+    k = 0
+    A = 0
+    B = 0
+    while k < t*3:
+        A = S[i] = to_four_bytes(left_rotate(S[i] + to_four_bytes((A + B)), 3))
+        B = L[j] = to_four_bytes(left_rotate(L[j] + to_four_bytes((A + B)), to_four_bytes((A + B))))
+        k += 1
         i = (i + 1) % t
         j = (j + 1) % c
 
+def entry_to_word():
+    num = input("Which Hexadecimal number would you like to convert to decimal/denary?  \n")
+    num_split = num.split(" ")
+    hex_nums = []
+    for i in num_split:
+        try:
+            hex_nums.append(int(i, 16))
+        except ValueError:
+            print("I/ You did not enter a hexadecimal number!")
 
-def test():
-    key = [0x01, 0x23, 0x45, 0x67,
-           0x89, 0xab, 0xcd, 0xef,
-           0xfe, 0xdc, 0xba, 0x98,
-           0x76, 0x54, 0x32, 0x10]
-    print(f"Key: {key}, len: {len(key)}, S: {S}")
-    rc5_setup(key)
-    print(S)
+    return hex_nums
 
+@timer
+def rc5_encryption_algorithm():
+    """
+    This Algorithm will encrypt a 64 bits Word, and should decrypt it back to the original word.
+    It is a Symetric block cipher algorithm, that uses a 128 bits key for encryption and decryption.
+    Based on the article "The RC5 Encryption Algorithm" by Ronald L. Rivest, 1994.
+    It works by creating a key expansion table S with t words of w bit,
+    that will be used to encrypt and decrypt the input word.
+    """
+    key = [0x00] * b
+
+    in1 = [0 , 0]
+    in2 = [0 , 0]
+    out = [0 , 0]
+
+    i = 1
+    while i < 6:
+        in1[0] = out[0]
+        in1[1] = out[1]
+        j = 0
+        while j < b:
+            key[j] = to_byte(out[0] % (255 - j))
+            j +=1
+
+        rc5_setup(key)
+        # print(f"D/ Key: {[(hex(keyv)) for keyv in key]}, len: {len(key)}, S: {[(hex(sv)) for sv in S]}")
+        rc5_encrypt(in1, out)
+        print(f"D/Encrypted: input: {[(hex(in1v)) for in1v in in1]}, output: {[(hex(outv)) for outv in out]}")
+        rc5_decrypt(out, in2)
+        # print(f"D/Decrypted: input: {[(hex(in1v)) for in1v in in1]}, output: {[(hex(in2v)) for in2v in in2]}, middle: {[(hex(outv)) for outv in out]}")
+
+        i += 1
 

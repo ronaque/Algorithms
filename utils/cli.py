@@ -1,4 +1,4 @@
-from encryption_decryption.rc5 import test
+from encryption_decryption.rc5 import rc5_encryption_algorithm
 from factorization.pollard_rho import pollard_rho_factorization
 from graphs.hamiltonian_cycle import get_first_cycle_backtracking
 
@@ -23,7 +23,7 @@ def execute_encryption_decryption():
         case 0:
             return
         case 1:
-            test()
+            rc5_encryption_algorithm()
 
     return
 
