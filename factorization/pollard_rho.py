@@ -1,7 +1,10 @@
 import random
 from math import gcd, sqrt
 
+from utils.decorator import timer
 
+
+@timer
 def pollard_rho_factorization(n: int) -> int | None:
     """
     This algorithm is used to find a factor of a number n by trying to find it until a cycle is found on the function

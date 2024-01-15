@@ -17,11 +17,11 @@ if __name__ == '__main__':
             case 3:
                 execute_encryption_decryption()
 
-
         command = int(input("Choose what you want to execute:"
                             "\n0 - Exit"
                             "\n1 - Graph Algorithms"
                             "\n2 - Factorization Algoriths"
+                            "\n3 - Encryption and Decryption Algorithms"
                             "\n"))
 
     print("Fim da execução")
