@@ -101,17 +101,17 @@ def rc5_encrypt(input, output):
     print("Initializing Encryption")
     A = to_four_bytes(input[0] + S[0])
     B = to_four_bytes(input[1] + S[1])
-    print(f"A: {A}, B: {B}")
+    # print(f"A: {A}, B: {B}")
 
     i = 1
     while i <= r:
         A = to_four_bytes((left_rotate(A ^ B, B)) + S[2*i])
         B = to_four_bytes((left_rotate(B ^ A, A)) + S[2*i+1])
-        print(f"A {A} B {B} | ", sep="", end="")
-        if i % 4 == 0:
-            print("")
+        # print(f"A {A} B {B} | ", sep="", end="")
+        # if i % 4 == 0:
+        #     print("")
         i += 1
-    print("")
+    # print("")
 
     output[0] = A
     output[1] = B
@@ -132,19 +132,19 @@ def rc5_decrypt(input, output):
     print("\nInitializing Decryption")
     A = to_four_bytes(input[0])
     B = to_four_bytes(input[1])
-    print(f"A: {A}, B: {B}")
+    # print(f"A: {A}, B: {B}")
     i = r
     while i > 0:
         A = to_four_bytes(right_rotate(ct.c_uint32(A - S[2*i]).value, B) ^ B)
         B = to_four_bytes((right_rotate(ct.c_uint32(B - S[2*i+1]).value, A)) ^ A)
-        print(f"A {A} B {B} | ", sep="", end="")
-        if i % 4 == 0:
-            print("")
+        # print(f"A {A} B {B} | ", sep="", end="")
+        # if i % 4 == 0:
+        #     print("")
         i -= 1
-    print("")
+    # print("")
     output[0] = to_four_bytes(A - S[0])
     output[1] = to_four_bytes(B - S[1])
-    print(f"Output: {output[0]} {output[1]}")
+    # print(f"Output: {output[0]} {output[1]}")
     print(f"End of Decryption")
 
 def rc5_setup(key):
@@ -162,21 +162,17 @@ def rc5_setup(key):
     L = [0] * c
     i = b - 1
     # Initialize L: convert the key from bytes to words
-    print("Initializing L")
     while i != -1:
         L[i // u] = to_four_bytes((L[i // u] << 8) + key[i])
-        print(L[i//u], sep=" ", end=" ")
         i -= 1
-    print("")
+
     # Initialize S using the p and q magic constants
-    print("Initializing S")
     S[0] = p
     i = 1
     while i < t:
         S[i] = to_four_bytes((S[i-1] + q))
-        print(S[i], sep=" ", end=" ")
         i += 1
-    print("\nMixing S")
+
     # Mix L into S
     i = 0
     j = 0
@@ -189,11 +185,6 @@ def rc5_setup(key):
         k += 1
         i = (i + 1) % t
         j = (j + 1) % c
-
-    for s in S:
-        print(f"{s}", sep=" ", end=" ")
-    print("")
-    print("End of Setup\n")
 
 def entry_to_word():
     num = input("Which Hexadecimal number would you like to convert to decimal/denary?  \n")
@@ -223,7 +214,7 @@ def rc5_encryption_algorithm():
     out = [0 , 0]
 
     i = 1
-    while i < 2:
+    while i < 6:
         print("\nStarting iteration")
         in1[0] = out[0]
         in1[1] = out[1]
@@ -231,14 +222,15 @@ def rc5_encryption_algorithm():
         while j < b:
             key[j] = to_byte(out[0] % (255 - j))
             j +=1
-        for k in key:
-            print(k, sep=" ", end=" ")
 
-        print("")
         rc5_setup(key)
         rc5_encrypt(in1, out)
-        print(f"Encrypted data: {in1[0]} {in1[1]} --> {out[0]} {out[1]}")
+        print("key: ", end="")
+        for k in key:
+            print(f'{k:02x}', sep=" ", end=" ")
+        print(f"\nPlaintext: {in1[0]:08X} {in1[1]:08X} --> Ciphertext: {out[0]:08X} {out[1]:08X}")
         rc5_decrypt(out, in2)
+        print(f"Ciphertext: {out[0]:08X} {out[1]:08X} --> Plaintext: {in2[0]:08X} {in2[1]:08X}")
 
         i += 1
 
