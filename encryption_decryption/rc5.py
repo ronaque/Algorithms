@@ -39,6 +39,18 @@ def to_four_bytes(num):
     """
     return num & 0xFFFFFFFF
 
+def check_bits(num1, num2):
+    bit_len_1 = num1.bit_length()
+    bit_len_2 = num2.bit_length()
+
+    bits_num1 = bin(num1)
+    bits_num2 = bin(num2)
+
+    bit_diference = bit_len_1 - bit_len_2
+
+    return bits_num1[bit_diference + 2:] == bits_num2[2:]
+
+
 def left_rotate(x, y):
     """
     Executes a Left Rotation Operation in X.
@@ -53,7 +65,7 @@ def left_rotate(x, y):
     -------
 
     """
-    return (((x) << (y&(w-1))) | ((x) >> (w - (y&(w-1)))))
+    return (to_four_bytes(((x) << (y&(w-1)))) | to_four_bytes(((x) >> (w - (y&(w-1))))))
 
 def right_rotate(x, y):
     """
@@ -69,7 +81,7 @@ def right_rotate(x, y):
     -------
 
     """
-    return (((x) >> (y&(w-1))) | ((x) << (w - (y&(w-1)))))
+    return (to_four_bytes(((x) >> (y&(w-1)))) | to_four_bytes(((x) << (w - (y&(w-1))))))
 
 def rc5_encrypt(input, output):
     """
@@ -86,17 +98,24 @@ def rc5_encrypt(input, output):
     -------
 
     """
+    print("Initializing Encryption")
     A = to_four_bytes(input[0] + S[0])
     B = to_four_bytes(input[1] + S[1])
+    print(f"A: {A}, B: {B}")
 
     i = 1
     while i <= r:
-        A = to_four_bytes(left_rotate(A ^ B, B) + S[2*i])
-        B = to_four_bytes(left_rotate(B ^ A, A) + S[2*i+1])
+        A = to_four_bytes((left_rotate(A ^ B, B)) + S[2*i])
+        B = to_four_bytes((left_rotate(B ^ A, A)) + S[2*i+1])
+        print(f"A {A} B {B} | ", sep="", end="")
+        if i % 4 == 0:
+            print("")
         i += 1
+    print("")
 
     output[0] = A
     output[1] = B
+    print(f"End of Encryption")
 
 def rc5_decrypt(input, output):
     """
@@ -110,16 +129,23 @@ def rc5_decrypt(input, output):
     -------
 
     """
+    print("\nInitializing Decryption")
     A = to_four_bytes(input[0])
     B = to_four_bytes(input[1])
+    print(f"A: {A}, B: {B}")
     i = r
     while i > 0:
-        A = to_four_bytes(right_rotate(A - S[2*i], B) ^ B)
-        B = to_four_bytes(right_rotate(B - S[2*i+1], A) ^ A)
+        A = to_four_bytes(right_rotate(ct.c_uint32(A - S[2*i]).value, B) ^ B)
+        B = to_four_bytes((right_rotate(ct.c_uint32(B - S[2*i+1]).value, A)) ^ A)
+        print(f"A {A} B {B} | ", sep="", end="")
+        if i % 4 == 0:
+            print("")
         i -= 1
-
+    print("")
     output[0] = to_four_bytes(A - S[0])
     output[1] = to_four_bytes(B - S[1])
+    print(f"Output: {output[0]} {output[1]}")
+    print(f"End of Decryption")
 
 def rc5_setup(key):
     """
@@ -136,17 +162,21 @@ def rc5_setup(key):
     L = [0] * c
     i = b - 1
     # Initialize L: convert the key from bytes to words
+    print("Initializing L")
     while i != -1:
         L[i // u] = to_four_bytes((L[i // u] << 8) + key[i])
+        print(L[i//u], sep=" ", end=" ")
         i -= 1
-
+    print("")
     # Initialize S using the p and q magic constants
+    print("Initializing S")
     S[0] = p
     i = 1
     while i < t:
         S[i] = to_four_bytes((S[i-1] + q))
+        print(S[i], sep=" ", end=" ")
         i += 1
-
+    print("\nMixing S")
     # Mix L into S
     i = 0
     j = 0
@@ -154,11 +184,16 @@ def rc5_setup(key):
     A = 0
     B = 0
     while k < t*3:
-        A = S[i] = to_four_bytes(left_rotate(S[i] + to_four_bytes((A + B)), 3))
-        B = L[j] = to_four_bytes(left_rotate(L[j] + to_four_bytes((A + B)), to_four_bytes((A + B))))
+        A = S[i] = to_four_bytes(left_rotate(to_four_bytes(S[i] + to_four_bytes((A + B))), 3))
+        B = L[j] = to_four_bytes(left_rotate(to_four_bytes(to_four_bytes(L[j]) + to_four_bytes((A + B))), to_four_bytes((A + B))))
         k += 1
         i = (i + 1) % t
         j = (j + 1) % c
+
+    for s in S:
+        print(f"{s}", sep=" ", end=" ")
+    print("")
+    print("End of Setup\n")
 
 def entry_to_word():
     num = input("Which Hexadecimal number would you like to convert to decimal/denary?  \n")
@@ -188,20 +223,22 @@ def rc5_encryption_algorithm():
     out = [0 , 0]
 
     i = 1
-    while i < 6:
+    while i < 2:
+        print("\nStarting iteration")
         in1[0] = out[0]
         in1[1] = out[1]
         j = 0
         while j < b:
             key[j] = to_byte(out[0] % (255 - j))
             j +=1
+        for k in key:
+            print(k, sep=" ", end=" ")
 
+        print("")
         rc5_setup(key)
-        # print(f"D/ Key: {[(hex(keyv)) for keyv in key]}, len: {len(key)}, S: {[(hex(sv)) for sv in S]}")
         rc5_encrypt(in1, out)
-        print(f"D/Encrypted: input: {[(hex(in1v)) for in1v in in1]}, output: {[(hex(outv)) for outv in out]}")
+        print(f"Encrypted data: {in1[0]} {in1[1]} --> {out[0]} {out[1]}")
         rc5_decrypt(out, in2)
-        # print(f"D/Decrypted: input: {[(hex(in1v)) for in1v in in1]}, output: {[(hex(in2v)) for in2v in in2]}, middle: {[(hex(outv)) for outv in out]}")
 
         i += 1
 
