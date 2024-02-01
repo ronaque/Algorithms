@@ -39,18 +39,6 @@ def to_four_bytes(num):
     """
     return num & 0xFFFFFFFF
 
-def check_bits(num1, num2):
-    bit_len_1 = num1.bit_length()
-    bit_len_2 = num2.bit_length()
-
-    bits_num1 = bin(num1)
-    bits_num2 = bin(num2)
-
-    bit_diference = bit_len_1 - bit_len_2
-
-    return bits_num1[bit_diference + 2:] == bits_num2[2:]
-
-
 def left_rotate(x, y):
     """
     Executes a Left Rotation Operation in X.
@@ -65,7 +53,7 @@ def left_rotate(x, y):
     -------
 
     """
-    return (to_four_bytes(((x) << (y&(w-1)))) | to_four_bytes(((x) >> (w - (y&(w-1))))))
+    return to_four_bytes((x << (y & (w - 1)))) | to_four_bytes((x >> (w - (y & (w - 1)))))
 
 def right_rotate(x, y):
     """
@@ -81,7 +69,7 @@ def right_rotate(x, y):
     -------
 
     """
-    return (to_four_bytes(((x) >> (y&(w-1)))) | to_four_bytes(((x) << (w - (y&(w-1))))))
+    return to_four_bytes((x >> (y & (w - 1)))) | to_four_bytes((x << (w - (y & (w - 1)))))
 
 def rc5_encrypt(input, output):
     """
@@ -101,17 +89,12 @@ def rc5_encrypt(input, output):
     print("Initializing Encryption")
     A = to_four_bytes(input[0] + S[0])
     B = to_four_bytes(input[1] + S[1])
-    # print(f"A: {A}, B: {B}")
 
     i = 1
     while i <= r:
         A = to_four_bytes((left_rotate(A ^ B, B)) + S[2*i])
         B = to_four_bytes((left_rotate(B ^ A, A)) + S[2*i+1])
-        # print(f"A {A} B {B} | ", sep="", end="")
-        # if i % 4 == 0:
-        #     print("")
         i += 1
-    # print("")
 
     output[0] = A
     output[1] = B
@@ -132,19 +115,15 @@ def rc5_decrypt(input, output):
     print("\nInitializing Decryption")
     A = to_four_bytes(input[0])
     B = to_four_bytes(input[1])
-    # print(f"A: {A}, B: {B}")
+
     i = r
     while i > 0:
-        A = to_four_bytes(right_rotate(ct.c_uint32(A - S[2*i]).value, B) ^ B)
-        B = to_four_bytes((right_rotate(ct.c_uint32(B - S[2*i+1]).value, A)) ^ A)
-        # print(f"A {A} B {B} | ", sep="", end="")
-        # if i % 4 == 0:
-        #     print("")
+        B = (right_rotate(ct.c_uint32(B - S[2*i+1]).value, A)) ^ A
+        A = right_rotate(ct.c_uint32(A - S[2*i]).value, B) ^ B
         i -= 1
-    # print("")
-    output[0] = to_four_bytes(A - S[0])
-    output[1] = to_four_bytes(B - S[1])
-    # print(f"Output: {output[0]} {output[1]}")
+
+    output[0] = A - S[0]
+    output[1] = B - S[1]
     print(f"End of Decryption")
 
 def rc5_setup(key):
