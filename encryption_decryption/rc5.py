@@ -1,5 +1,7 @@
 import ctypes as ct
+from math import ceil
 
+from utils.conversions import string_2_int_32, string_2_int_128, to_four_bytes, to_byte, int_2_string_32
 from utils.decorator import timer
 
 w = 32 # Word Size
@@ -12,32 +14,6 @@ S = [0]*t # Expanded key table
 # Magic constants
 p = 0x0b7e15163
 q = 0x9e3779b9
-
-def to_byte(num):
-    """
-    Converts a number to a byte.
-    Parameters
-    ----------
-    num: The number to be converted.
-
-    Returns
-    -------
-    A byte.
-    """
-    return num & 0xFF
-
-def to_four_bytes(num):
-    """
-    Converts a number to a 4 bytes array.
-    Parameters
-    ----------
-    num: The number to be converted.
-
-    Returns
-    -------
-    A 4 bytes array.
-    """
-    return num & 0xFFFFFFFF
 
 def left_rotate(x, y):
     """
@@ -86,7 +62,6 @@ def rc5_encrypt(input, output):
     -------
 
     """
-    print("Initializing Encryption")
     A = to_four_bytes(input[0] + S[0])
     B = to_four_bytes(input[1] + S[1])
 
@@ -98,7 +73,6 @@ def rc5_encrypt(input, output):
 
     output[0] = A
     output[1] = B
-    print(f"End of Encryption")
 
 def rc5_decrypt(input, output):
     """
@@ -112,7 +86,6 @@ def rc5_decrypt(input, output):
     -------
 
     """
-    print("\nInitializing Decryption")
     A = to_four_bytes(input[0])
     B = to_four_bytes(input[1])
 
@@ -122,9 +95,8 @@ def rc5_decrypt(input, output):
         A = right_rotate(ct.c_uint32(A - S[2*i]).value, B) ^ B
         i -= 1
 
-    output[0] = A - S[0]
-    output[1] = B - S[1]
-    print(f"End of Decryption")
+    output[0] = ct.c_uint32(A - S[0]).value
+    output[1] = ct.c_uint32(B - S[1]).value
 
 def rc5_setup(key):
     """
@@ -165,51 +137,90 @@ def rc5_setup(key):
         i = (i + 1) % t
         j = (j + 1) % c
 
-def entry_to_word():
-    num = input("Which Hexadecimal number would you like to convert to decimal/denary?  \n")
-    num_split = num.split(" ")
-    hex_nums = []
-    for i in num_split:
-        try:
-            hex_nums.append(int(i, 16))
-        except ValueError:
-            print("I/ You did not enter a hexadecimal number!")
+def rc5_entry():
+    # Input the key and turn the key into a 128 bits integer number
+    key_word = input("Enter the 128 bits key (16 characters) to be used in the encryption: ")
+    if len(key_word) != 16:
+        raise RuntimeError("The key word must have 16 characters")
+    key_parameter = string_2_int_128(key_word)
 
-    return hex_nums
+    # Input the word to be encrypted
+    input_word = input("Enter the text to be encrypted: ")
+    if len(input_word) < 8:
+        raise RuntimeError("The input word must have at least 8 characters")
 
-@timer
-def rc5_encryption_algorithm():
+    print(f"Initializing encryption of {input_word} with the key {key_word}")
+
+    input_size = ceil(len(input_word) / 8)
+    input_word_list = []
+    middle_word_list = []
+    output_word_list = []
+    word_remainder = 0
+
+    # Split the input word into 8 characters words and encrypt them separately
+    for i in range(0, input_size, 1):
+        if i == input_size - 1:
+            index_word = input_word[i*8:]
+            index_word_size = len(index_word)
+            if index_word_size < 8:
+                word_remainder = 8 - index_word_size
+                index_word += " " * word_remainder
+        else:
+            index_word = input_word[i*8: (i+1)*8]
+
+        input_word_list.append(index_word)
+
+        input_parameter = [string_2_int_32(index_word[0:4]), string_2_int_32(index_word[4:8])]
+
+
+        middle_word, output_word = rc5_encryption_algorithm(input_parameter, key_parameter)
+        middle_word_list.append(int_2_string_32(middle_word[0]))
+        middle_word_list.append(int_2_string_32(middle_word[1]))
+        output_word_list.append(int_2_string_32(output_word[0]))
+        output_word_list.append(int_2_string_32(output_word[1]))
+
+    print("\nPlaintext: ")
+    for text in input_word_list:
+        print(f"{text}", end="")
+    print("\nCiphertext: ")
+    for text in middle_word_list:
+        print(f"{text}", end="")
+    print("\nPlaintext Decrypted: ")
+    for text in output_word_list:
+        print(f"{text}", end="")
+    print("\n")
+
+def rc5_encryption_algorithm(input_word, key_word):
     """
     This Algorithm will encrypt a 64 bits Word, and should decrypt it back to the original word.
     It is a Symetric block cipher algorithm, that uses a 128 bits key for encryption and decryption.
     Based on the article "The RC5 Encryption Algorithm" by Ronald L. Rivest, 1994.
     It works by creating a key expansion table S with t words of w bit,
     that will be used to encrypt and decrypt the input word.
+
+    Parameters
+    ----------
+    input_word: The 64 bits word to be encrypted
+    key_word: The 128 bits key to be used in the encryption
     """
     key = [0x00] * b
 
-    in1 = [0 , 0]
-    in2 = [0 , 0]
-    out = [0 , 0]
+    output_word = [0 , 0]
+    middle_word = [0 , 0]
 
-    i = 1
-    while i < 6:
-        print("\nStarting iteration")
-        in1[0] = out[0]
-        in1[1] = out[1]
-        j = 0
-        while j < b:
-            key[j] = to_byte(out[0] % (255 - j))
-            j +=1
+    j = 0
+    while j < b:
+        key[j] = to_byte(key_word % (255 - j))
+        j +=1
 
-        rc5_setup(key)
-        rc5_encrypt(in1, out)
-        print("key: ", end="")
-        for k in key:
-            print(f'{k:02x}', sep=" ", end=" ")
-        print(f"\nPlaintext: {in1[0]:08X} {in1[1]:08X} --> Ciphertext: {out[0]:08X} {out[1]:08X}")
-        rc5_decrypt(out, in2)
-        print(f"Ciphertext: {out[0]:08X} {out[1]:08X} --> Plaintext: {in2[0]:08X} {in2[1]:08X}")
+    rc5_setup(key)
+    rc5_encrypt(input_word, middle_word)
+    # print(f"\nPlaintext: {input_word[0]:08X} {input_word[1]:08X} --> Ciphertext: {middle_word[0]:08X} {middle_word[1]:08X}")
+    # print(f"Plaintext: {int_2_string_32(input_word[0])}{int_2_string_32(input_word[1])} --> Ciphertext: {int_2_string_32(middle_word[0])}{int_2_string_32(middle_word[1])}")
 
-        i += 1
 
+    rc5_decrypt(middle_word, output_word)
+    # print(f"Ciphertext: {middle_word[0]:08X} {middle_word[1]:08X} --> Plaintext: {output_word[0]:08X} {output_word[1]:08X}")
+    # print(f"Ciphertext: {int_2_string_32(middle_word[0])}{int_2_string_32(middle_word[1])} --> Plaintext: {int_2_string_32(output_word[0])}{int_2_string_32(output_word[1])}")
+
+    return middle_word, output_word
