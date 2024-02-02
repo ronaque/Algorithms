@@ -138,20 +138,58 @@ def rc5_setup(key):
         j = (j + 1) % c
 
 def rc5_entry():
-    input_word = input("Enter the 64 bits (8 characters) word to be encrypted: ")
-    if len(input_word) < 8:
-        raise RuntimeError("The input word must have at least 8 characters")
+    # Input the key and turn the key into a 128 bits integer number
     key_word = input("Enter the 128 bits key (16 characters) to be used in the encryption: ")
     if len(key_word) != 16:
         raise RuntimeError("The key word must have 16 characters")
-
-    input_parameter = [string_2_int_32(input_word[0:4]), string_2_int_32(input_word[4:8])]
     key_parameter = string_2_int_128(key_word)
 
-    print(f"Initializing encryption of {input_word} with key {key_word}")
-    rc5_encryption_algorithm(input_parameter, key_parameter)
+    # Input the word to be encrypted
+    input_word = input("Enter the text to be encrypted: ")
+    if len(input_word) < 8:
+        raise RuntimeError("The input word must have at least 8 characters")
 
-@timer
+    print(f"Initializing encryption of {input_word} with the key {key_word}")
+
+    input_size = ceil(len(input_word) / 8)
+    input_word_list = []
+    middle_word_list = []
+    output_word_list = []
+    word_remainder = 0
+
+    # Split the input word into 8 characters words and encrypt them separately
+    for i in range(0, input_size, 1):
+        if i == input_size - 1:
+            index_word = input_word[i*8:]
+            index_word_size = len(index_word)
+            if index_word_size < 8:
+                word_remainder = 8 - index_word_size
+                index_word += " " * word_remainder
+        else:
+            index_word = input_word[i*8: (i+1)*8]
+
+        input_word_list.append(index_word)
+
+        input_parameter = [string_2_int_32(index_word[0:4]), string_2_int_32(index_word[4:8])]
+
+
+        middle_word, output_word = rc5_encryption_algorithm(input_parameter, key_parameter)
+        middle_word_list.append(int_2_string_32(middle_word[0]))
+        middle_word_list.append(int_2_string_32(middle_word[1]))
+        output_word_list.append(int_2_string_32(output_word[0]))
+        output_word_list.append(int_2_string_32(output_word[1]))
+
+    print("\nPlaintext: ")
+    for text in input_word_list:
+        print(f"{text}", end="")
+    print("\nCiphertext: ")
+    for text in middle_word_list:
+        print(f"{text}", end="")
+    print("\nPlaintext Decrypted: ")
+    for text in output_word_list:
+        print(f"{text}", end="")
+    print("\n")
+
 def rc5_encryption_algorithm(input_word, key_word):
     """
     This Algorithm will encrypt a 64 bits Word, and should decrypt it back to the original word.
@@ -177,12 +215,12 @@ def rc5_encryption_algorithm(input_word, key_word):
 
     rc5_setup(key)
     rc5_encrypt(input_word, middle_word)
-    print(f"\nPlaintext: {input_word[0]:08X} {input_word[1]:08X} --> Ciphertext: {middle_word[0]:08X} {middle_word[1]:08X}")
-    print(f"Plaintext: {int_2_string_32(input_word[0])}{int_2_string_32(input_word[1])} --> Ciphertext: {int_2_string_32(middle_word[0])}{int_2_string_32(middle_word[1])}")
+    # print(f"\nPlaintext: {input_word[0]:08X} {input_word[1]:08X} --> Ciphertext: {middle_word[0]:08X} {middle_word[1]:08X}")
+    # print(f"Plaintext: {int_2_string_32(input_word[0])}{int_2_string_32(input_word[1])} --> Ciphertext: {int_2_string_32(middle_word[0])}{int_2_string_32(middle_word[1])}")
 
 
     rc5_decrypt(middle_word, output_word)
-    print(f"Ciphertext: {middle_word[0]:08X} {middle_word[1]:08X} --> Plaintext: {output_word[0]:08X} {output_word[1]:08X}")
-    print(f"Ciphertext: {int_2_string_32(middle_word[0])}{int_2_string_32(middle_word[1])} --> Plaintext: {int_2_string_32(output_word[0])}{int_2_string_32(output_word[1])}")
+    # print(f"Ciphertext: {middle_word[0]:08X} {middle_word[1]:08X} --> Plaintext: {output_word[0]:08X} {output_word[1]:08X}")
+    # print(f"Ciphertext: {int_2_string_32(middle_word[0])}{int_2_string_32(middle_word[1])} --> Plaintext: {int_2_string_32(output_word[0])}{int_2_string_32(output_word[1])}")
 
     return middle_word, output_word
